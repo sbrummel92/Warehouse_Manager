@@ -1,0 +1,1965 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#111318">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<meta name="apple-mobile-web-app-title" content="WH Manager">
+<link rel="manifest" href="manifest.json">
+<title>Warehouse Manager</title>
+<style>
+/* ─── RESET & TOKENS ──────────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+:root {
+  --bg:        #f0f2f5;
+  --surface:   #ffffff;
+  --card:      #ffffff;
+  --card2:     #f0f2f5;
+  --border:    #dde1ea;
+  --accent:    #3b72d9;
+  --accent2:   #7c3aed;
+  --green:     #16a34a;
+  --amber:     #d97706;
+  --red:       #dc2626;
+  --text:      #1a1d2e;
+  --muted:     #6b7280;
+  --r:         12px;
+  --nav-h:     60px;
+  --header-h:  54px;
+  --safe-b:    env(safe-area-inset-bottom, 0px);
+}
+html, body { height: 100%; overflow: hidden; }
+body {
+  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  display: flex;
+  flex-direction: column;
+  max-width: 430px;
+  margin: 0 auto;
+  position: relative;
+}
+
+/* ─── HEADER ──────────────────────────────────────────────────────────── */
+#app-header {
+  height: var(--header-h);
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  padding: 0 16px;
+  gap: 10px;
+  flex-shrink: 0;
+  position: relative;
+  z-index: 50;
+}
+#app-header h1 { font-size: 18px; font-weight: 800; letter-spacing: -0.5px; flex: 1; }
+#app-header h1 span { color: var(--accent); }
+.hdr-btn {
+  background: var(--card);
+  border: 1px solid var(--border);
+  color: var(--text);
+  border-radius: 8px;
+  padding: 6px 12px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+/* ─── MAIN CONTENT ────────────────────────────────────────────────────── */
+#main {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  position: relative;
+}
+.tab-page {
+  position: absolute;
+  inset: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  display: none;
+  padding-bottom: calc(var(--nav-h) + var(--safe-b) + 16px);
+}
+.tab-page.active { display: block; }
+#warehouse-page.active {
+  display: flex;
+  flex-direction: column;
+  padding-bottom: 0;
+}
+
+/* ─── BOTTOM NAV ──────────────────────────────────────────────────────── */
+#bottom-nav {
+  height: calc(var(--nav-h) + var(--safe-b));
+  background: var(--surface);
+  border-top: 1px solid var(--border);
+  display: flex;
+  flex-shrink: 0;
+  padding-bottom: var(--safe-b);
+}
+.nav-btn {
+  flex: 1;
+  background: none;
+  border: none;
+  color: var(--muted);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  cursor: pointer;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  text-transform: uppercase;
+  transition: color 0.2s;
+  padding-top: 6px;
+}
+.nav-btn svg { width: 22px; height: 22px; }
+.nav-btn.active { color: var(--accent); }
+.nav-btn.active svg path, .nav-btn.active svg rect, .nav-btn.active svg circle,
+.nav-btn.active svg line, .nav-btn.active svg polyline { stroke: var(--accent); }
+.wh-nav-dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--border);
+  transition: background 0.2s, transform 0.2s;
+}
+.wh-nav-dot.active { transform: scale(1.4); }
+
+/* ─── COMMON COMPONENTS ───────────────────────────────────────────────── */
+.section-pad { padding: 14px 14px 0; }
+.card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  padding: 14px;
+  margin-bottom: 10px;
+}
+.label {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  color: var(--muted);
+  margin-bottom: 5px;
+  display: block;
+}
+input[type=text], input[type=number], textarea, select {
+  width: 100%;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 12px;
+  color: var(--text);
+  font-size: 16px;
+  outline: none;
+  -webkit-appearance: none;
+  appearance: none;
+  font-family: inherit;
+}
+input:focus, textarea:focus { border-color: var(--accent); }
+textarea { resize: none; height: 64px; }
+.row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.row3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+.field { margin-bottom: 10px; }
+.field:last-child { margin-bottom: 0; }
+.btn {
+  border: none; border-radius: 8px; padding: 11px 18px;
+  font-size: 14px; font-weight: 700; cursor: pointer; transition: opacity 0.15s;
+  font-family: inherit;
+}
+.btn:active { opacity: 0.75; }
+.btn-accent { background: var(--accent); color: #fff; }
+.btn-surface { background: var(--card2); color: var(--text); }
+.btn-red { background: var(--red); color: #fff; }
+.btn-full { width: 100%; }
+.btn-sm { padding: 7px 12px; font-size: 12px; border-radius: 6px; }
+
+/* ─── TOAST ───────────────────────────────────────────────────────────── */
+#toast {
+  position: fixed;
+  bottom: calc(var(--nav-h) + var(--safe-b) + 12px);
+  left: 50%; transform: translateX(-50%) translateY(12px);
+  background: #22c55e; color: #fff;
+  padding: 9px 20px; border-radius: 20px;
+  font-size: 13px; font-weight: 700;
+  opacity: 0; transition: all 0.3s; z-index: 9999;
+  pointer-events: none; white-space: nowrap;
+}
+#toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+/* ─── MODAL OVERLAY ───────────────────────────────────────────────────── */
+#modal-overlay {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.7);
+  z-index: 200;
+  display: none;
+  align-items: flex-end;
+  justify-content: center;
+}
+#modal-overlay.open { display: flex; }
+#modal-box {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 20px 20px 0 0;
+  padding: 20px 16px calc(20px + var(--safe-b));
+  width: 100%;
+  max-width: 430px;
+  max-height: 90vh;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+#modal-box h2 { font-size: 16px; font-weight: 800; margin-bottom: 16px; }
+.modal-drag { width: 40px; height: 4px; background: var(--border); border-radius: 2px; margin: 0 auto 16px; }
+
+/* ═══════════════════════════════════════════════════════════════════════
+   REPOSITORY TAB
+═══════════════════════════════════════════════════════════════════════ */
+#repo-search {
+  margin: 14px 14px 0;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 10px 14px;
+  color: var(--text);
+  font-size: 16px;
+  width: calc(100% - 28px);
+  outline: none;
+}
+#repo-search:focus { border-color: var(--accent); }
+#repo-list { padding: 10px 14px; }
+.repo-item {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  padding: 14px;
+  margin-bottom: 8px;
+  position: relative;
+}
+.repo-item .item-name { font-size: 16px; font-weight: 700; margin-bottom: 2px; padding-right: 80px; }
+.repo-item .item-id { font-size: 11px; color: var(--accent); font-weight: 600; margin-bottom: 8px; }
+.repo-item .item-stats { display: flex; gap: 12px; flex-wrap: wrap; }
+.repo-item .stat { font-size: 12px; color: var(--muted); }
+.repo-item .stat strong { color: var(--text); }
+.repo-item .item-comment { font-size: 12px; color: var(--muted); margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--border); font-style: italic; }
+.repo-item .item-actions { position: absolute; top: 12px; right: 12px; display: flex; gap: 6px; }
+.icon-btn {
+  background: var(--card2);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text);
+  width: 32px; height: 32px;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; font-size: 14px;
+}
+.icon-btn.red { border-color: var(--red); color: var(--red); }
+#repo-empty { text-align: center; padding: 48px 16px; color: var(--muted); font-size: 14px; }
+#repo-empty .big { font-size: 40px; margin-bottom: 10px; }
+
+/* ═══════════════════════════════════════════════════════════════════════
+   WAREHOUSE TAB
+═══════════════════════════════════════════════════════════════════════ */
+#warehouse-page {
+  overflow: hidden;
+  padding-bottom: 0;
+}
+#wh-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+#lane-label {
+  flex: 1;
+  text-align: center;
+  font-size: 15px;
+  font-weight: 800;
+  letter-spacing: 0.3px;
+}
+#lane-dots {
+  display: flex;
+  gap: 5px;
+  justify-content: center;
+  padding: 6px 14px;
+  background: var(--bg);
+  border-bottom: 1px solid var(--border);
+  overflow-x: auto;
+  flex-shrink: 0;
+  scrollbar-width: none;
+}
+#lane-dots::-webkit-scrollbar { display: none; }
+.lane-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: var(--border);
+  flex-shrink: 0;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.2s;
+}
+.lane-dot.active { background: var(--accent); transform: scale(1.35); }
+.lane-dot-gap {
+  width: 14px; height: 8px;
+  flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  gap: 2px;
+}
+.lane-dot-gap::before, .lane-dot-gap::after {
+  content: '';
+  display: block;
+  width: 3px; height: 3px;
+  border-radius: 50%;
+  background: var(--muted);
+  opacity: 0.5;
+}
+
+#wh-body {
+  flex: 1;
+  min-height: 0;        /* key: lets flex child shrink below content size */
+  overflow: hidden;
+  position: relative;
+}
+/* The sliding track */
+#lane-track {
+  display: flex;
+  height: 100%;
+  transition: transform 0.32s cubic-bezier(0.4, 0, 0.2, 1);
+  will-change: transform;
+}
+.lane-slide {
+  flex-shrink: 0;
+  width: 100%;
+  height: 100%;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: 12px 12px calc(var(--nav-h) + var(--safe-b) + 16px);
+}
+
+/* Space card */
+.space-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  margin-bottom: 0;
+  overflow: hidden;
+  transition: box-shadow 0.2s, transform 0.15s;
+  user-select: none;
+  -webkit-user-select: none;
+  position: relative;
+}
+.space-card.dragging {
+  opacity: 0.45;
+  transform: scale(0.97);
+}
+
+/* Insert zone between / around space cards */
+.insert-zone {
+  height: 10px;
+  margin: 0;
+  border-radius: 4px;
+  transition: height 0.15s, background 0.15s;
+  position: relative;
+}
+.insert-zone.insert-active {
+  height: 36px;
+  background: rgba(91,141,238,0.18);
+  border: 2px dashed rgba(91,141,238,0.6);
+  border-radius: 8px;
+}
+.insert-zone.insert-active::after {
+  content: '▼ Insert here';
+  position: absolute;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--accent);
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+/* Empty space body as item drop target */
+.space-body-empty {
+  padding: 10px 12px 12px;
+}
+.empty-drop-zone {
+  border: 2px dashed var(--border);
+  border-radius: 8px;
+  padding: 14px;
+  text-align: center;
+  font-size: 12px;
+  color: var(--muted);
+  margin-bottom: 8px;
+  transition: border-color 0.15s, background 0.15s;
+}
+.empty-drop-zone.item-drag-over {
+  border-color: var(--accent);
+  background: rgba(91,141,238,0.1);
+  color: var(--accent);
+}
+.space-header {
+  display: flex;
+  align-items: center;
+  padding: 10px 12px;
+  background: var(--card2);
+  gap: 8px;
+  cursor: pointer;
+}
+.space-name { font-size: 14px; font-weight: 800; flex: 1; }
+.space-count {
+  font-size: 11px;
+  color: var(--muted);
+  background: var(--surface);
+  border-radius: 20px;
+  padding: 2px 8px;
+  font-weight: 600;
+}
+.space-edit-btn {
+  background: none;
+  border: none;
+  color: var(--muted);
+  font-size: 16px;
+  cursor: pointer;
+  padding: 2px 4px;
+}
+.space-body { padding: 10px 12px 12px; }
+
+/* Item chip inside a space */
+.item-chip {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 8px 10px;
+  margin-bottom: 6px;
+}
+.item-chip:last-child { margin-bottom: 0; }
+.chip-drag-handle { font-size: 14px; color: var(--muted); cursor: grab; flex-shrink: 0; padding: 0 2px; line-height: 1; letter-spacing: -1px; }
+.chip-info { flex: 1; min-width: 0; }
+.chip-name { font-size: 13px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.chip-sub { font-size: 11px; color: var(--muted); }
+.chip-qty {
+  font-size: 13px; font-weight: 700; color: var(--accent); flex-shrink: 0;
+  background: rgba(91,141,238,0.12); border: 1px solid rgba(91,141,238,0.3);
+  border-radius: 6px; padding: 3px 8px; cursor: pointer;
+  -webkit-user-select: none; user-select: none;
+}
+.chip-qty:active { background: rgba(91,141,238,0.3); }
+.chip-qty.mismatch {
+  color: var(--red);
+  background: rgba(239,68,68,0.12); border-color: rgba(239,68,68,0.35);
+}
+.chip-qty.mismatch:active { background: rgba(239,68,68,0.3); }
+.chip-date {
+  font-size: 11px; font-weight: 600; color: var(--muted); flex-shrink: 0;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 6px; padding: 3px 8px; cursor: pointer;
+  -webkit-user-select: none; user-select: none; white-space: nowrap;
+}
+.chip-date:active { border-color: var(--accent); color: var(--accent); }
+.chip-date.set { color: var(--amber); border-color: rgba(245,158,11,0.4); background: rgba(245,158,11,0.08); }
+.chip-comment {
+  font-size: 11px;
+  color: var(--muted);
+  font-style: italic;
+  margin-top: 2px;
+  line-height: 1.4;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.chip-del { background: none; border: none; color: var(--muted); font-size: 15px; cursor: pointer; padding: 0 4px; flex-shrink: 0; }
+.chip-del:active { color: var(--red); }
+.item-chip.item-drag-over {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px rgba(91,141,238,0.3);
+  background: var(--card2);
+}
+
+.add-item-btn {
+  width: 100%;
+  margin-top: 8px;
+  background: var(--surface);
+  border: 1px dashed var(--border);
+  border-radius: 8px;
+  color: var(--muted);
+  padding: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  text-align: center;
+}
+.add-item-btn:active { border-color: var(--accent); color: var(--accent); }
+
+.add-space-btn {
+  width: 100%;
+  background: var(--surface);
+  border: 1px dashed var(--border);
+  border-radius: var(--r);
+  color: var(--muted);
+  padding: 14px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  text-align: center;
+  margin-bottom: 10px;
+}
+.add-space-btn:active { border-color: var(--accent); color: var(--accent); }
+
+/* ─── Drag ghost ──────────────────────────────────────────────────────── */
+#drag-ghost {
+  position: fixed;
+  pointer-events: none;
+  z-index: 1000;
+  opacity: 0;
+  transition: opacity 0.1s;
+  transform: rotate(2deg) scale(1.03);
+  max-width: 340px;
+  min-width: 200px;
+}
+#drag-ghost.visible { opacity: 1; }
+
+/* ─── Edge-zone lane switcher ─────────────────────────────────────────── */
+.edge-zone {
+  position: fixed;
+  top: 0; bottom: 0;
+  width: 52px;
+  z-index: 990;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  font-size: 28px;
+  font-weight: 900;
+  color: var(--accent);
+  pointer-events: none;
+  transition: background 0.2s, color 0.2s;
+}
+.edge-zone.visible { display: flex; }
+.edge-left  { left: 0;  background: linear-gradient(to right, rgba(91,141,238,0.22), transparent); }
+.edge-right { right: 0; background: linear-gradient(to left,  rgba(91,141,238,0.22), transparent); }
+.edge-zone.armed { color: #fff; }
+.edge-left.armed  { background: linear-gradient(to right, rgba(91,141,238,0.55), transparent); }
+.edge-right.armed { background: linear-gradient(to left,  rgba(91,141,238,0.55), transparent); }
+
+/* ═══════════════════════════════════════════════════════════════════════
+   SETTINGS TAB
+═══════════════════════════════════════════════════════════════════════ */
+.setting-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+.setting-row .setting-label { flex: 1; font-size: 14px; font-weight: 600; }
+.setting-row .setting-val { font-size: 16px; font-weight: 800; color: var(--accent); min-width: 32px; text-align: center; }
+.stepper-btn {
+  width: 36px; height: 36px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--card2);
+  color: var(--text);
+  font-size: 18px;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+.stepper-btn:active { background: var(--accent); border-color: var(--accent); }
+.danger-zone { margin-top: 8px; }
+.danger-zone p { font-size: 12px; color: var(--muted); margin-bottom: 10px; line-height: 1.5; }
+
+/* ─── Scrollbar hide ──────────────────────────────────────────────────── */
+.tab-page::-webkit-scrollbar { display: none; }
+.tab-page { scrollbar-width: none; }
+.lane-slide::-webkit-scrollbar { display: none; }
+.lane-slide { scrollbar-width: none; }
+
+/* ═══════════════════════════════════════════════════════════════════════
+   SEARCH TAB
+═══════════════════════════════════════════════════════════════════════ */
+#search-filters {
+  padding: 12px 14px 0;
+  position: sticky;
+  top: 0;
+  background: var(--bg);
+  z-index: 10;
+}
+#search-query {
+  width: 100%;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 10px 14px;
+  color: var(--text);
+  font-size: 16px;
+  outline: none;
+  margin-bottom: 8px;
+}
+#search-query:focus { border-color: var(--accent); }
+#search-wh-filters {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 10px;
+  flex-wrap: wrap;
+}
+.search-wh-check {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  padding: 5px 10px;
+  border-radius: 20px;
+  border: 2px solid var(--border);
+  background: var(--card);
+  color: var(--muted);
+  transition: all 0.15s;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.search-wh-check input[type=checkbox] { display: none; }
+.search-wh-check.checked { color: var(--text); }
+#search-list { padding: 0 14px 14px; }
+.search-item {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  padding: 12px 14px;
+  margin-bottom: 8px;
+  border-left: 4px solid var(--border);
+}
+.search-item-name { font-size: 15px; font-weight: 700; margin-bottom: 3px; }
+.search-item-meta { font-size: 11px; color: var(--muted); margin-bottom: 6px; }
+.search-item-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.search-item-wh {
+  font-size: 11px; font-weight: 700;
+  padding: 2px 8px; border-radius: 20px;
+  color: #fff;
+}
+.search-item-comment {
+  font-size: 11px; color: var(--muted); font-style: italic;
+  margin-top: 5px;
+}
+#search-empty { text-align: center; padding: 48px 16px; color: var(--muted); font-size: 14px; }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div id="app-header">
+  <h1>🏭 WH <span>Manager</span></h1>
+  <div id="header-action"></div>
+</div>
+
+<!-- MAIN -->
+<div id="main">
+
+  <!-- ── REPOSITORY TAB ─────────────────────────────────────── -->
+  <div class="tab-page active" id="repo-page">
+    <input type="search" id="repo-search" placeholder="🔍 Search products…" oninput="renderRepo()">
+    <div id="repo-list"></div>
+  </div>
+
+  <!-- ── WAREHOUSE TAB ──────────────────────────────────────── -->
+  <div class="tab-page" id="warehouse-page">
+    <div id="wh-header">
+      <button class="hdr-btn" id="prev-lane-btn" onclick="goLane(currentLane - 1)">‹ Prev</button>
+      <div id="lane-label">Lane 1</div>
+      <button class="hdr-btn" id="next-lane-btn" onclick="goLane(currentLane + 1)">Next ›</button>
+    </div>
+    <div id="lane-dots"></div>
+    <div id="wh-body">
+      <div id="lane-track"></div>
+    </div>
+  </div>
+
+  <!-- ── SEARCH TAB ────────────────────────────────────────────── -->
+  <div class="tab-page" id="search-page">
+    <div id="search-filters">
+      <input type="search" id="search-query" placeholder="🔍 Search items…" oninput="renderSearch()">
+      <div id="search-wh-filters">
+        <label class="search-wh-check" id="sf-label-wrap-0">
+          <input type="checkbox" id="sf-0" checked onchange="renderSearch()">
+          <span id="sf-label-0">Warehouse 1</span>
+        </label>
+        <label class="search-wh-check" id="sf-label-wrap-1">
+          <input type="checkbox" id="sf-1" checked onchange="renderSearch()">
+          <span id="sf-label-1">Warehouse 2</span>
+        </label>
+        <label class="search-wh-check" id="sf-label-wrap-2">
+          <input type="checkbox" id="sf-2" checked onchange="renderSearch()">
+          <span id="sf-label-2">Warehouse 3</span>
+        </label>
+      </div>
+    </div>
+    <div id="search-list"></div>
+  </div>
+
+  <!-- ── SETTINGS TAB ───────────────────────────────────────── -->
+  <div class="tab-page" id="settings-page">
+    <div class="section-pad">
+
+      <div id="wh-settings-0"></div>
+      <div id="wh-settings-1"></div>
+      <div id="wh-settings-2"></div>
+
+      <div class="card">
+        <p class="label">Data</p>
+        <button class="btn btn-surface btn-full" style="margin-bottom:8px" onclick="exportData()">📤 Export All Data (JSON)</button>
+        <button class="btn btn-surface btn-full" onclick="importData()">📥 Import Data (JSON)</button>
+        <input type="file" id="import-file" accept=".json" style="display:none" onchange="handleImport(event)">
+      </div>
+
+      <div class="card danger-zone">
+        <p class="label" style="color:var(--red)">Danger Zone</p>
+        <p>This permanently deletes the entire repository and warehouse layout from this device.</p>
+        <button class="btn btn-red btn-full" onclick="resetAll()">🗑 Reset All Data</button>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /main -->
+
+<!-- BOTTOM NAV -->
+<div id="bottom-nav">
+  <button class="nav-btn active" onclick="switchTab('repo')" id="nav-repo">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
+    Repository
+  </button>
+  <button class="nav-btn" id="nav-warehouse" onclick="handleWarehouseNavTap()">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="9" width="18" height="12" rx="1"/><path d="M3 9l9-6 9 6"/><path d="M9 21V12h6v9"/></svg>
+    <span id="nav-wh-label">Warehouse</span>
+    <div id="nav-wh-dots" style="display:flex;gap:3px;justify-content:center;margin-top:1px;">
+      <div class="wh-nav-dot" id="wh-dot-0"></div>
+      <div class="wh-nav-dot" id="wh-dot-1"></div>
+      <div class="wh-nav-dot" id="wh-dot-2"></div>
+    </div>
+  </button>
+  <button class="nav-btn" onclick="switchTab('search')" id="nav-search">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+    Search
+  </button>
+  <button class="nav-btn" onclick="switchTab('settings')" id="nav-settings">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+    Settings
+  </button>
+</div>
+
+<!-- TOAST -->
+<div id="toast"></div>
+
+<!-- Lane-switch edge zones (shown during drag) -->
+<div id="edge-left"  class="edge-zone edge-left">‹</div>
+<div id="edge-right" class="edge-zone edge-right">›</div>
+
+<!-- DRAG GHOST -->
+<div id="drag-ghost"></div>
+
+<!-- MODAL -->
+<div id="modal-overlay" onclick="closeModalOnBg(event)">
+  <div id="modal-box">
+    <div class="modal-drag"></div>
+    <div id="modal-content"></div>
+  </div>
+</div>
+
+<script>
+/* ══════════════════════════════════════════════════════════════════════
+   STATE & PERSISTENCE
+══════════════════════════════════════════════════════════════════════ */
+const SK = 'wh_mgr_v2';
+
+const WH_COLORS = ['#3b72d9', '#16a34a', '#dc2626']; // blue, green, red
+const WH_NAMES_DEFAULT = ['Warehouse 1', 'Warehouse 2', 'Warehouse 3'];
+
+function defaultWH(idx) {
+  return {
+    name: WH_NAMES_DEFAULT[idx],
+    lanes: 4,
+    splitAfter: null,
+    warehouse: []
+  };
+}
+
+function defaultState() {
+  return {
+    repo: [],
+    activeWH: 0,
+    wh: [defaultWH(0), defaultWH(1), defaultWH(2)]
+  };
+}
+
+let state = defaultState();
+
+// Convenience: get active warehouse object
+function wh() { return state.wh[state.activeWH]; }
+
+function loadState() {
+  try {
+    const s = JSON.parse(localStorage.getItem(SK));
+    if (s) {
+      // Migrate old single-warehouse saves
+      if (s.warehouse && !s.wh) {
+        state.repo = s.repo || [];
+        state.activeWH = 0;
+        state.wh[0].lanes = s.lanes || 4;
+        state.wh[0].splitAfter = s.splitAfter || null;
+        state.wh[0].warehouse = s.warehouse || [];
+      } else {
+        state = s;
+        // Ensure wh array has 3 entries
+        while (state.wh.length < 3) state.wh.push(defaultWH(state.wh.length));
+      }
+    }
+    // Ensure each warehouse has correct lane count
+    state.wh.forEach(w => {
+      while (w.warehouse.length < w.lanes)
+        w.warehouse.push({ name: `Lane ${w.warehouse.length + 1}`, spaces: [] });
+      if (w.warehouse.length > w.lanes)
+        w.warehouse = w.warehouse.slice(0, w.lanes);
+    });
+  } catch(e) { state = defaultState(); }
+}
+
+function saveState() {
+  localStorage.setItem(SK, JSON.stringify(state));
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   TOAST
+══════════════════════════════════════════════════════════════════════ */
+let toastTimer;
+function toast(msg, color = '#22c55e') {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.style.background = color;
+  el.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove('show'), 2200);
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   MODAL
+══════════════════════════════════════════════════════════════════════ */
+function openModal(html) {
+  document.getElementById('modal-content').innerHTML = html;
+  document.getElementById('modal-overlay').classList.add('open');
+}
+function closeModal() {
+  document.getElementById('modal-overlay').classList.remove('open');
+}
+function closeModalOnBg(e) {
+  if (e.target === document.getElementById('modal-overlay')) closeModal();
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   TAB NAVIGATION
+══════════════════════════════════════════════════════════════════════ */
+let currentTab = 'repo';
+let whTapTimer = null;
+const tabPages  = { repo: 'repo-page', warehouse: 'warehouse-page', search: 'search-page', settings: 'settings-page' };
+const tabNavBtns = { repo: 'nav-repo', warehouse: 'nav-warehouse', search: 'nav-search', settings: 'nav-settings' };
+const headerActions = {
+  repo: '<button class="hdr-btn" onclick="openAddProduct()">+ Add Product</button>',
+  warehouse: '',
+  search: '',
+  settings: ''
+};
+
+function handleWarehouseNavTap() {
+  if (currentTab !== 'warehouse') {
+    switchTab('warehouse');
+    return;
+  }
+  // Already on warehouse: cycle to next on double-tap
+  clearTimeout(whTapTimer);
+  whTapTimer = setTimeout(() => { whTapTimer = null; }, 400);
+  if (whTapTimer) {
+    // This is a second tap within 400ms — actually we detect via counting
+  }
+  // Use a counter approach
+  if (!handleWarehouseNavTap._pending) {
+    handleWarehouseNavTap._pending = true;
+    handleWarehouseNavTap._count = 1;
+    setTimeout(() => {
+      if (handleWarehouseNavTap._count >= 2) {
+        switchWarehouse((state.activeWH + 1) % 3);
+      }
+      handleWarehouseNavTap._pending = false;
+      handleWarehouseNavTap._count = 0;
+    }, 350);
+  } else {
+    handleWarehouseNavTap._count++;
+  }
+}
+
+function switchWarehouse(idx) {
+  state.activeWH = idx;
+  saveState();
+  currentLane = 0;
+  buildWarehouseDOM();
+  updateWhNav();
+  toast(`Switched to ${esc(wh().name)}`);
+}
+
+function updateWhNav() {
+  const color = WH_COLORS[state.activeWH];
+  const btn = document.getElementById('nav-warehouse');
+  // Update label
+  document.getElementById('nav-wh-label').textContent = wh().name || 'Warehouse';
+  // Update nav button color when active
+  if (currentTab === 'warehouse') {
+    btn.style.color = color;
+    btn.querySelectorAll('svg path, svg rect, svg circle, svg line, svg polyline').forEach(el => {
+      el.style.stroke = color;
+    });
+  } else {
+    btn.style.color = '';
+    btn.querySelectorAll('svg path, svg rect, svg circle, svg line, svg polyline').forEach(el => {
+      el.style.stroke = '';
+    });
+  }
+  // Update dots
+  for (let i = 0; i < 3; i++) {
+    const dot = document.getElementById(`wh-dot-${i}`);
+    dot.style.background = i === state.activeWH ? WH_COLORS[i] : 'var(--border)';
+    dot.classList.toggle('active', i === state.activeWH);
+  }
+  // Keep search filter labels in sync
+  updateSearchFilterLabels();
+}
+
+function switchTab(name) {
+  if (currentTab === name && name !== 'warehouse') return;
+  currentTab = name;
+  Object.values(tabPages).forEach(id => document.getElementById(id).classList.remove('active'));
+  Object.values(tabNavBtns).forEach(id => {
+    const el = document.getElementById(id);
+    el.classList.remove('active');
+    el.style.color = '';
+    el.querySelectorAll('svg path, svg rect, svg circle, svg line, svg polyline').forEach(s => s.style.stroke = '');
+  });
+  document.getElementById(tabPages[name]).classList.add('active');
+  const activeBtn = document.getElementById(tabNavBtns[name]);
+  activeBtn.classList.add('active');
+  document.getElementById('header-action').innerHTML = headerActions[name];
+  if (name === 'repo') renderRepo();
+  if (name === 'warehouse') { buildWarehouseDOM(); updateWhNav(); }
+  if (name === 'search') renderSearch();
+  if (name === 'settings') renderSettings();
+  if (name !== 'warehouse') updateWhNav(); // keep dots visible always
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   REPOSITORY
+══════════════════════════════════════════════════════════════════════ */
+function renderRepo() {
+  const q = (document.getElementById('repo-search').value || '').toLowerCase();
+  const list = document.getElementById('repo-list');
+  let items = [...state.repo].sort((a, b) => a.name.localeCompare(b.name));
+  if (q) items = items.filter(p => p.name.toLowerCase().includes(q) || p.sku.toLowerCase().includes(q));
+  if (!items.length) {
+    list.innerHTML = `<div id="repo-empty"><div class="big">📦</div><p>${state.repo.length ? 'No products match your search.' : 'No products yet.\nTap "+ Add Product" to begin.'}</p></div>`;
+    return;
+  }
+  list.innerHTML = items.map(p => `
+    <div class="repo-item">
+      <div class="item-actions">
+        <button class="icon-btn" onclick="openEditProduct('${p.id}')">✏️</button>
+        <button class="icon-btn red" onclick="deleteProduct('${p.id}')">✕</button>
+      </div>
+      <div class="item-name">${esc(p.name)}</div>
+      <div class="item-id"># ${esc(p.sku)}</div>
+      <div class="item-stats">
+        <span class="stat">Size: <strong>${esc(String(p.size||'—'))}</strong></span>
+        <span class="stat">Case Qty: <strong>${esc(String(p.caseQty||'—'))}</strong></span>
+        <span class="stat">Pallet Qty: <strong>${esc(String(p.palletQty||'—'))}</strong></span>
+      </div>
+      ${p.comments ? `<div class="item-comment">${esc(p.comments)}</div>` : ''}
+    </div>
+  `).join('');
+}
+
+function productFormHTML(p = {}) {
+  return `
+    <h2>${p.id ? 'Edit Product' : 'Add Product'}</h2>
+    <div class="field"><label class="label">Name *</label>
+      <input type="text" id="pf-name" value="${esc(p.name||'')}" placeholder="Product name" autocapitalize="words"></div>
+    <div class="field"><label class="label">ID / SKU *</label>
+      <input type="text" id="pf-sku" value="${esc(p.sku||'')}" placeholder="SKU-001" autocapitalize="characters" autocorrect="off"></div>
+    <div class="row3">
+      <div class="field"><label class="label">Size</label>
+        <input type="text" id="pf-size" value="${esc(p.size||'')}" placeholder="e.g. 500ml" autocorrect="off"></div>
+      <div class="field"><label class="label">Case Qty</label>
+        <input type="number" id="pf-case" value="${p.caseQty||''}" placeholder="0" inputmode="numeric"></div>
+      <div class="field"><label class="label">Pallet Qty</label>
+        <input type="number" id="pf-pallet" value="${p.palletQty||''}" placeholder="0" inputmode="numeric"></div>
+    </div>
+    <div class="field"><label class="label">Comments</label>
+      <textarea id="pf-comments" placeholder="Optional notes…">${esc(p.comments||'')}</textarea></div>
+    <div style="display:flex;gap:8px;margin-top:4px">
+      <button class="btn btn-surface" style="flex:1" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-accent" style="flex:2" onclick="saveProduct('${p.id||''}')">Save</button>
+    </div>
+  `;
+}
+
+function openAddProduct() { openModal(productFormHTML()); }
+function openEditProduct(id) {
+  const p = state.repo.find(x => x.id === id);
+  if (p) openModal(productFormHTML(p));
+}
+
+function saveProduct(id) {
+  const name = document.getElementById('pf-name').value.trim();
+  const sku  = document.getElementById('pf-sku').value.trim();
+  if (!name || !sku) { toast('Name and SKU are required', '#ef4444'); return; }
+  if (id) {
+    const p = state.repo.find(x => x.id === id);
+    if (p) { p.name = name; p.sku = sku; p.size = document.getElementById('pf-size').value.trim(); p.caseQty = document.getElementById('pf-case').value; p.palletQty = document.getElementById('pf-pallet').value; p.comments = document.getElementById('pf-comments').value.trim(); }
+  } else {
+    state.repo.push({ id: uid(), name, sku, size: document.getElementById('pf-size').value.trim(), caseQty: document.getElementById('pf-case').value, palletQty: document.getElementById('pf-pallet').value, comments: document.getElementById('pf-comments').value.trim() });
+  }
+  saveState(); closeModal(); renderRepo();
+  toast(id ? '✅ Product updated' : '✅ Product added');
+}
+
+function deleteProduct(id) {
+  if (!confirm('Delete this product?')) return;
+  state.repo = state.repo.filter(p => p.id !== id);
+  // Remove from warehouse too
+  wh().warehouse.forEach(lane => {
+    lane.spaces.forEach(sp => {
+      sp.items = sp.items.filter(it => it.repoId !== id);
+    });
+  });
+  saveState(); renderRepo();
+  toast('🗑 Product deleted', '#ef4444');
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   WAREHOUSE
+══════════════════════════════════════════════════════════════════════ */
+let currentLane = 0;
+let laneCount = 0;
+
+function buildWarehouseDOM() {
+  laneCount = wh().lanes;
+  const track = document.getElementById('lane-track');
+  track.innerHTML = '';
+  // Rebuild all lane slides
+  wh().warehouse.forEach((lane, li) => {
+    const slide = document.createElement('div');
+    slide.className = 'lane-slide';
+    slide.id = `lane-slide-${li}`;
+    track.appendChild(slide);
+  });
+  renderAllLanes();
+  renderDots();
+  goLane(Math.min(currentLane, wh().lanes - 1), false);
+  setupSwipe();
+}
+
+function renderAllLanes() {
+  wh().warehouse.forEach((_, li) => renderLane(li));
+}
+
+function renderLane(li) {
+  const lane = wh().warehouse[li];
+  const slide = document.getElementById(`lane-slide-${li}`);
+  if (!slide) return;
+
+  // Build: insert-zone, space, insert-zone, space, ... insert-zone
+  let html = `<div class="insert-zone" data-li="${li}" data-insert="0"></div>`;
+  lane.spaces.forEach((sp, si) => {
+    html += spaceHTML(li, si, sp);
+    html += `<div class="insert-zone" data-li="${li}" data-insert="${si + 1}"></div>`;
+  });
+  html += `<button class="add-space-btn" style="margin-top:4px" onclick="addSpace(${li})">+ Add Space</button>`;
+  slide.innerHTML = html;
+
+  slide.querySelectorAll('.space-card').forEach(card => attachDrag(card));
+  slide.querySelectorAll('.item-chip').forEach(chip => attachItemDrag(chip));
+  slide.querySelectorAll('.empty-drop-zone').forEach(zone => attachEmptyZoneDrop(zone));
+}
+
+function spaceHTML(li, si, sp) {
+  const items = sp.items.map((it, ii) => {
+    const p = state.repo.find(r => r.id === it.repoId);
+    if (!p) return '';
+    const palletQty = parseFloat(p.palletQty) || 0;
+    const mismatch = palletQty > 0 && it.qty !== palletQty;
+    const dateLabel = it.date ? it.date : '📅 Date';
+    const dateSet = !!it.date;
+    return `<div class="item-chip" data-li="${li}" data-si="${si}" data-ii="${ii}">
+      <div class="chip-drag-handle">⠿</div>
+      <div class="chip-info">
+        <div class="chip-name">${esc(p.name)}</div>
+        <div class="chip-sub">Size: ${esc(String(p.size||'—'))} · Case Qty: ${esc(String(p.caseQty||'—'))}</div>
+        ${p.comments ? `<div class="chip-comment">${esc(p.comments)}</div>` : ''}
+      </div>
+      <div class="chip-date${dateSet ? ' set' : ''}" onclick="editItemDate(${li},${si},${ii})">${esc(dateLabel)}</div>
+      <div class="chip-qty${mismatch ? ' mismatch' : ''}" onclick="editItemQty(${li},${si},${ii})">×${it.qty}</div>
+      <button class="chip-del" onclick="removeItemFromSpace(${li},${si},${ii})">✕</button>
+    </div>`;
+  }).join('');
+
+  return `<div class="space-card" data-li="${li}" data-si="${si}">
+    <div class="space-header" onclick="editSpaceName(${li},${si})">
+      <span class="space-name">${esc(sp.name)}</span>
+      <span class="space-count">${sp.items.length} item${sp.items.length !== 1 ? 's' : ''}</span>
+      <button class="space-edit-btn" onclick="event.stopPropagation();deleteSpace(${li},${si})">🗑</button>
+    </div>
+    <div class="space-body${sp.items.length === 0 ? ' space-body-empty' : ''}">
+      ${items || `<div class="empty-drop-zone" data-li="${li}" data-si="${si}">Drop item here</div>`}
+      <button class="add-item-btn" onclick="openAddItemToSpace(${li},${si})">+ Add Item from Repository</button>
+    </div>
+  </div>`;
+}
+
+function renderDots() {
+  const dots = document.getElementById('lane-dots');
+  const split = wh().splitAfter;
+  dots.innerHTML = wh().warehouse.map((_, i) => {
+    const dot = `<div class="lane-dot ${i === currentLane ? 'active' : ''}" onclick="goLane(${i})"></div>`;
+    const gap = (split !== null && split !== undefined && i === split)
+      ? `<div class="lane-dot-gap"></div>` : '';
+    return dot + gap;
+  }).join('');
+}
+
+function goLane(idx, animate = true) {
+  // Wrap around
+  if (idx < 0) idx = wh().lanes - 1;
+  if (idx >= wh().lanes) idx = 0;
+  currentLane = idx;
+  const track = document.getElementById('lane-track');
+  if (!animate) track.style.transition = 'none';
+  track.style.transform = `translateX(${-idx * 100}%)`;
+  if (!animate) setTimeout(() => track.style.transition = '', 10);
+  document.getElementById('lane-label').textContent = wh().warehouse[idx]?.name || `Lane ${idx + 1}`;
+  // Always show prev/next fully since we loop
+  document.getElementById('prev-lane-btn').style.opacity = '1';
+  document.getElementById('next-lane-btn').style.opacity = '1';
+  renderDots();
+}
+
+/* ── Swipe gesture ─────────────────────────────────────────────────── */
+function setupSwipe() {
+  const body = document.getElementById('wh-body');
+  let startX, startY, startTime, locked;
+
+  function onStart(e) {
+    if (anyDragActive) return;
+    const t = e.touches ? e.touches[0] : e;
+    startX = t.clientX; startY = t.clientY;
+    startTime = Date.now(); locked = null;
+  }
+
+  function onMove(e) {
+    if (anyDragActive || !startX) return;
+    const t = e.touches ? e.touches[0] : e;
+    const dx = t.clientX - startX;
+    const dy = t.clientY - startY;
+    if (locked === null) {
+      if (Math.abs(dx) > Math.abs(dy) + 5) locked = 'x';
+      else if (Math.abs(dy) > Math.abs(dx) + 5) locked = 'y';
+    }
+    if (locked === 'x') e.preventDefault();
+  }
+
+  function onEnd(e) {
+    if (!startX || locked !== 'x') { startX = null; return; }
+    const t = e.changedTouches ? e.changedTouches[0] : e;
+    const dx = t.clientX - startX;
+    const dt = Date.now() - startTime;
+    const fast = dt < 300 && Math.abs(dx) > 30;
+    const far  = Math.abs(dx) > 60;
+    if ((fast || far) && dx < 0) goLane(currentLane + 1);
+    else if ((fast || far) && dx > 0) goLane(currentLane - 1);
+    startX = null;
+  }
+
+  body.removeEventListener('touchstart', body._ts);
+  body.removeEventListener('touchmove', body._tm);
+  body.removeEventListener('touchend', body._te);
+  body._ts = onStart; body._tm = onMove; body._te = onEnd;
+  body.addEventListener('touchstart', onStart, { passive: true });
+  body.addEventListener('touchmove', onMove, { passive: false });
+  body.addEventListener('touchend', onEnd, { passive: true });
+}
+
+/* ── Drag & Drop spaces ────────────────────────────────────────────── */
+let dragSrc = null; // {li, si}
+let ghost = null;
+let ghostOffsetX = 0, ghostOffsetY = 0;
+let anyDragActive = false; // blocks swipe-to-lane while dragging
+
+function getActiveLaneSlide() {
+  return document.getElementById(`lane-slide-${currentLane}`);
+}
+
+/* ── Unified drag-move helpers (vertical scroll + edge lane switch) ── */
+let autoScrollRAF = null;
+let edgeLaneTimer = null;
+let lastDragX = 0, lastDragY = 0;
+const EDGE_ZONE   = 60;   // px from screen edge that arms lane switch
+const EDGE_DWELL  = 650;  // ms finger must stay in zone before switching
+
+function updateDragMove(clientX, clientY) {
+  lastDragX = clientX; lastDragY = clientY;
+  _tickDragMove();
+}
+
+function _tickDragMove() {
+  stopAutoScroll();
+  const slide = getActiveLaneSlide();
+  const W = window.innerWidth;
+  const VZONE = 44, MAX_SPEED = 12;
+
+  // Vertical auto-scroll
+  if (slide) {
+    const rect = slide.getBoundingClientRect();
+    const distTop = lastDragY - rect.top;
+    const distBot = rect.bottom - lastDragY;
+    let speed = 0;
+    if (distTop < VZONE) speed = -MAX_SPEED * (1 - distTop / VZONE);
+    else if (distBot < VZONE) speed =  MAX_SPEED * (1 - distBot / VZONE);
+    if (speed !== 0) {
+      autoScrollRAF = requestAnimationFrame(() => {
+        slide.scrollTop += speed;
+        _tickDragMove();
+      });
+    }
+  }
+
+  // Edge-zone lane switch
+  const inLeft  = lastDragX < EDGE_ZONE;
+  const inRight = lastDragX > W - EDGE_ZONE;
+  const elL = document.getElementById('edge-left');
+  const elR = document.getElementById('edge-right');
+
+  elL.classList.toggle('armed', inLeft);
+  elR.classList.toggle('armed', inRight);
+
+  if (inLeft || inRight) {
+    if (!edgeLaneTimer) {
+      edgeLaneTimer = setTimeout(() => {
+        edgeLaneTimer = null;
+        if (navigator.vibrate) navigator.vibrate(25);
+        goLane(inLeft ? currentLane - 1 : currentLane + 1);
+        lockScroll(); // lock the newly visible lane
+        // Clear highlights on old lane
+        document.querySelectorAll('.space-card').forEach(c => c.classList.remove('drag-over'));
+        document.querySelectorAll('.item-chip').forEach(c => c.classList.remove('item-drag-over'));
+      }, EDGE_DWELL);
+    }
+  } else {
+    clearTimeout(edgeLaneTimer);
+    edgeLaneTimer = null;
+  }
+}
+
+function stopAutoScroll() {
+  if (autoScrollRAF) { cancelAnimationFrame(autoScrollRAF); autoScrollRAF = null; }
+}
+
+function showEdgeZones()  {
+  document.getElementById('edge-left').classList.add('visible');
+  document.getElementById('edge-right').classList.add('visible');
+}
+function hideEdgeZones()  {
+  const elL = document.getElementById('edge-left');
+  const elR = document.getElementById('edge-right');
+  elL.classList.remove('visible', 'armed');
+  elR.classList.remove('visible', 'armed');
+  clearTimeout(edgeLaneTimer); edgeLaneTimer = null;
+}
+
+function startAutoScroll(clientY) { lastDragY = clientY; updateDragMove(lastDragX, clientY); }
+
+function attachDrag(card) {
+  // Only trigger drag from the space-header (the coloured title bar)
+  const header = card.querySelector('.space-header');
+  if (!header) return;
+  let holdTimer = null;
+  let dragging = false;
+  let startTouch = null;
+
+  header.addEventListener('touchstart', e => {
+    startTouch = e.touches[0];
+    holdTimer = setTimeout(() => {
+      dragging = true;
+      anyDragActive = true;
+      const li = +card.dataset.li;
+      const si = +card.dataset.si;
+      beginDrag(card, li, si, startTouch.clientX, startTouch.clientY);
+      showEdgeZones();
+      if (navigator.vibrate) navigator.vibrate(40);
+    }, 450);
+  }, { passive: true });
+
+  header.addEventListener('touchmove', e => {
+    if (!dragging) {
+      if (startTouch) {
+        const t = e.touches[0];
+        if (Math.abs(t.clientX - startTouch.clientX) > 10 || Math.abs(t.clientY - startTouch.clientY) > 10) {
+          clearTimeout(holdTimer);
+        }
+      }
+      return;
+    }
+    const t = e.touches[0];
+    moveDrag(t);
+    updateDragMove(t.clientX, t.clientY);
+  }, { passive: true });
+
+  header.addEventListener('touchend', e => {
+    clearTimeout(holdTimer);
+    if (dragging) {
+      dragging = false;
+      anyDragActive = false;
+      stopAutoScroll();
+      hideEdgeZones();
+      endDrag(e.changedTouches[0]);
+    }
+  }, { passive: true });
+
+  header.addEventListener('touchcancel', () => {
+    clearTimeout(holdTimer);
+    dragging = false;
+    anyDragActive = false;
+    stopAutoScroll();
+    hideEdgeZones();
+    cancelDrag();
+  }, { passive: true });
+}
+
+function lockScroll() {
+  const slide = getActiveLaneSlide();
+  if (slide) slide.style.overflowY = 'hidden';
+}
+
+function unlockScroll() {
+  // Restore all slides
+  document.querySelectorAll('.lane-slide').forEach(s => s.style.overflowY = '');
+}
+
+function beginDrag(card, li, si, cx, cy) {
+  dragSrc = { li, si };
+  card.classList.add('dragging');
+  ghost = document.getElementById('drag-ghost');
+  ghost.innerHTML = card.innerHTML;
+  ghost.style.width = card.offsetWidth + 'px';
+  ghostOffsetX = card.offsetWidth / 2;
+  ghostOffsetY = 30;
+  moveGhost(cx, cy);
+  ghost.classList.add('visible');
+  document.querySelectorAll('.space-card').forEach(c => c._dragsrc = c === card);
+  lockScroll();
+}
+
+function moveGhost(cx, cy) {
+  const g = document.getElementById('drag-ghost');
+  g.style.left = (cx - ghostOffsetX) + 'px';
+  g.style.top  = (cy - ghostOffsetY) + 'px';
+}
+
+function moveDrag(touch) {
+  moveGhost(touch.clientX, touch.clientY);
+  const el = document.elementFromPoint(touch.clientX, touch.clientY);
+  const zone = el?.closest('.insert-zone');
+  document.querySelectorAll('.insert-zone').forEach(z => z.classList.remove('insert-active'));
+  if (zone) zone.classList.add('insert-active');
+}
+
+function endDrag(touch) {
+  const ghost = document.getElementById('drag-ghost');
+  ghost.classList.remove('visible');
+  document.querySelectorAll('.space-card').forEach(c => c.classList.remove('dragging'));
+  document.querySelectorAll('.insert-zone').forEach(z => z.classList.remove('insert-active'));
+  unlockScroll();
+  if (!dragSrc) return;
+  const el = document.elementFromPoint(touch.clientX, touch.clientY);
+  const zone = el?.closest('.insert-zone');
+  if (zone) {
+    const tli = +zone.dataset.li;
+    const insertAt = +zone.dataset.insert;
+    insertSpace(dragSrc.li, dragSrc.si, tli, insertAt);
+  }
+  dragSrc = null;
+}
+
+function cancelDrag() {
+  document.getElementById('drag-ghost').classList.remove('visible');
+  document.querySelectorAll('.space-card').forEach(c => { c.classList.remove('dragging'); c.classList.remove('drag-over'); });
+  unlockScroll();
+  dragSrc = null;
+}
+
+/* ── Renumber spaces in a lane (only renames "Space N" pattern) ─────── */
+function renumberSpaces(li) {
+  wh().warehouse[li].spaces.forEach((sp, i) => {
+    if (/^Space\s+\d+$/i.test(sp.name)) {
+      sp.name = `Space ${i + 1}`;
+    }
+  });
+}
+
+function insertSpace(li1, si1, li2, insertAt) {
+  // Remove from source
+  const [sp] = wh().warehouse[li1].spaces.splice(si1, 1);
+  // Adjust insertAt if same lane and source was before target
+  let at = insertAt;
+  if (li1 === li2 && si1 < insertAt) at--;
+  // Clamp
+  at = Math.max(0, Math.min(at, wh().warehouse[li2].spaces.length));
+  wh().warehouse[li2].spaces.splice(at, 0, sp);
+  renumberSpaces(li1);
+  if (li2 !== li1) renumberSpaces(li2);
+  saveState();
+  renderLane(li1);
+  if (li2 !== li1) renderLane(li2);
+  const msg = li1 === li2 ? '↕ Space moved' : '↔ Space moved to ' + (wh().warehouse[li2].name || `Lane ${li2 + 1}`);
+  toast(msg);
+  document.querySelectorAll('.space-card').forEach(c => attachDrag(c));
+  document.querySelectorAll('.item-chip').forEach(c => attachItemDrag(c));
+}
+
+/* ── Empty space drop zone for items ──────────────────────────────── */
+function attachEmptyZoneDrop(zone) {
+  zone.addEventListener('touchmove', e => {
+    if (!itemDragSrc) return;
+    zone.classList.add('item-drag-over');
+  }, { passive: true });
+  zone.addEventListener('touchend', e => {
+    zone.classList.remove('item-drag-over');
+  }, { passive: true });
+}
+
+/* ── Item drag & drop within/between spaces ────────────────────────── */
+let itemDragSrc = null; // {li, si, ii}
+let itemDragging = false;
+
+function attachItemDrag(chip) {
+  const handle = chip.querySelector('.chip-drag-handle');
+  if (!handle) return;
+  let holdTimer = null;
+  let active = false;
+
+  handle.addEventListener('touchstart', e => {
+    const t = e.touches[0];
+    holdTimer = setTimeout(() => {
+      active = true;
+      itemDragging = true;
+      anyDragActive = true;
+      const li = +chip.dataset.li;
+      const si = +chip.dataset.si;
+      const ii = +chip.dataset.ii;
+      itemDragSrc = { li, si, ii };
+      chip.style.opacity = '0.4';
+      beginItemGhost(chip, t.clientX, t.clientY);
+      lockScroll();
+      showEdgeZones();
+      if (navigator.vibrate) navigator.vibrate(30);
+    }, 350);
+  }, { passive: true });
+
+  handle.addEventListener('touchmove', e => {
+    if (!active) { clearTimeout(holdTimer); return; }
+    e.stopPropagation();
+    const t = e.touches[0];
+    moveGhost(t.clientX, t.clientY);
+    updateDragMove(t.clientX, t.clientY);
+    // Highlight target chip or empty zone
+    const el = document.elementFromPoint(t.clientX, t.clientY);
+    const target = el?.closest('.item-chip');
+    const emptyZone = el?.closest('.empty-drop-zone');
+    document.querySelectorAll('.item-chip').forEach(c => c.classList.remove('item-drag-over'));
+    document.querySelectorAll('.empty-drop-zone').forEach(z => z.classList.remove('item-drag-over'));
+    if (target && target !== chip) target.classList.add('item-drag-over');
+    else if (emptyZone) emptyZone.classList.add('item-drag-over');
+  }, { passive: true });
+
+  handle.addEventListener('touchend', e => {
+    clearTimeout(holdTimer);
+    if (!active) return;
+    active = false; itemDragging = false; anyDragActive = false;
+    stopAutoScroll();
+    unlockScroll();
+    hideEdgeZones();
+    chip.style.opacity = '';
+    document.getElementById('drag-ghost').classList.remove('visible');
+    document.querySelectorAll('.item-chip').forEach(c => c.classList.remove('item-drag-over'));
+    document.querySelectorAll('.empty-drop-zone').forEach(z => z.classList.remove('item-drag-over'));
+    const t = e.changedTouches[0];
+    const el = document.elementFromPoint(t.clientX, t.clientY);
+    const target = el?.closest('.item-chip');
+    const emptyZone = el?.closest('.empty-drop-zone');
+    if (emptyZone && itemDragSrc) {
+      const tli = +emptyZone.dataset.li;
+      const tsi = +emptyZone.dataset.si;
+      // Move item to the empty space
+      const [item] = wh().warehouse[itemDragSrc.li].spaces[itemDragSrc.si].items.splice(itemDragSrc.ii, 1);
+      wh().warehouse[tli].spaces[tsi].items.push(item);
+      saveState();
+      const affected = new Set([itemDragSrc.li, tli]);
+      affected.forEach(li => renderLane(li));
+      toast('↔ Item moved to ' + esc(wh().warehouse[tli].spaces[tsi].name));
+    } else if (target && itemDragSrc) {
+      const tli = +target.dataset.li;
+      const tsi = +target.dataset.si;
+      const tii = +target.dataset.ii;
+      if (tli !== itemDragSrc.li || tsi !== itemDragSrc.si || tii !== itemDragSrc.ii) {
+        moveItem(itemDragSrc.li, itemDragSrc.si, itemDragSrc.ii, tli, tsi, tii);
+      }
+    }
+    itemDragSrc = null;
+  }, { passive: true });
+
+  handle.addEventListener('touchcancel', () => {
+    clearTimeout(holdTimer);
+    active = false; itemDragging = false; anyDragActive = false;
+    stopAutoScroll();
+    unlockScroll();
+    hideEdgeZones();
+    chip.style.opacity = '';
+    document.getElementById('drag-ghost').classList.remove('visible');
+    document.querySelectorAll('.item-chip').forEach(c => c.classList.remove('item-drag-over'));
+    document.querySelectorAll('.empty-drop-zone').forEach(z => z.classList.remove('item-drag-over'));
+    itemDragSrc = null;
+  }, { passive: true });
+}
+
+function beginItemGhost(chip, cx, cy) {
+  const ghost = document.getElementById('drag-ghost');
+  ghost.innerHTML = chip.innerHTML;
+  ghost.style.width = chip.offsetWidth + 'px';
+  ghost.style.borderRadius = '8px';
+  ghost.style.background = 'var(--card2)';
+  ghost.style.border = '1px solid var(--accent)';
+  ghost.style.padding = '8px 10px';
+  moveGhost(cx, cy);
+  ghost.classList.add('visible');
+}
+
+function moveItem(li1, si1, ii1, li2, si2, ii2) {
+  const srcSpace = wh().warehouse[li1].spaces[si1];
+  const dstSpace = wh().warehouse[li2].spaces[si2];
+  const [item] = srcSpace.items.splice(ii1, 1);
+  // Insert before target index (adjust if same space and src was before dst)
+  let insertAt = ii2;
+  if (li1 === li2 && si1 === si2 && ii1 < ii2) insertAt--;
+  dstSpace.items.splice(insertAt, 0, item);
+  saveState();
+  const affectedLanes = new Set([li1, li2]);
+  affectedLanes.forEach(li => renderLane(li));
+  toast('↕ Item moved');
+}
+
+/* ── Space actions ─────────────────────────────────────────────────── */
+function addSpace(li) {
+  const name = `Space ${wh().warehouse[li].spaces.length + 1}`;
+  wh().warehouse[li].spaces.push({ name, items: [] });
+  renumberSpaces(li);
+  saveState(); renderLane(li);
+  toast('✅ Space added');
+}
+
+function deleteSpace(li, si) {
+  if (!confirm('Delete this space and all its items?')) return;
+  wh().warehouse[li].spaces.splice(si, 1);
+  renumberSpaces(li);
+  saveState(); renderLane(li);
+  toast('🗑 Space deleted', '#ef4444');
+}
+
+function editSpaceName(li, si) {
+  const sp = wh().warehouse[li].spaces[si];
+  openModal(`
+    <h2>Edit Space</h2>
+    <div class="field"><label class="label">Space Name</label>
+      <input type="text" id="sp-name" value="${esc(sp.name)}" autocapitalize="words"></div>
+    <div style="display:flex;gap:8px;margin-top:4px">
+      <button class="btn btn-surface" style="flex:1" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-accent" style="flex:2" onclick="saveSpaceName(${li},${si})">Save</button>
+    </div>
+  `);
+  setTimeout(() => document.getElementById('sp-name')?.focus(), 100);
+}
+
+function saveSpaceName(li, si) {
+  const val = document.getElementById('sp-name').value.trim();
+  if (!val) { toast('Name required', '#ef4444'); return; }
+  wh().warehouse[li].spaces[si].name = val;
+  saveState(); closeModal(); renderLane(li);
+  toast('✅ Space renamed');
+}
+
+/* ── Add item to space ─────────────────────────────────────────────── */
+function openAddItemToSpace(li, si) {
+  if (!state.repo.length) { toast('Add products to repository first', '#f59e0b'); return; }
+  const sorted = [...state.repo].sort((a, b) => a.name.localeCompare(b.name));
+  const options = sorted.map(p =>
+    `<option value="${p.id}">${esc(p.name)} (${esc(p.sku)})</option>`
+  ).join('');
+  const defaultQty = sorted[0]?.palletQty || 1;
+  openModal(`
+    <h2>Add Item to Space</h2>
+    <div class="field"><label class="label">Product</label>
+      <select id="item-pick" onchange="updateDefaultQty()">${options}</select></div>
+    <div class="field"><label class="label">Quantity</label>
+      <input type="number" id="item-qty" value="${defaultQty}" min="0.01" step="0.01" inputmode="decimal"></div>
+    <div style="display:flex;gap:8px;margin-top:4px">
+      <button class="btn btn-surface" style="flex:1" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-accent" style="flex:2" onclick="confirmAddItem(${li},${si})">Add</button>
+    </div>
+  `);
+}
+
+function updateDefaultQty() {
+  const repoId = document.getElementById('item-pick').value;
+  const p = state.repo.find(r => r.id === repoId);
+  if (p?.palletQty) document.getElementById('item-qty').value = p.palletQty;
+}
+
+function confirmAddItem(li, si) {
+  const repoId = document.getElementById('item-pick').value;
+  const qty = Math.round(parseFloat(document.getElementById('item-qty').value) * 100) / 100 || 1;
+  wh().warehouse[li].spaces[si].items.push({ repoId, qty });
+  saveState(); closeModal(); renderLane(li);
+  toast('✅ Item added to space');
+}
+
+function removeItemFromSpace(li, si, ii) {
+  wh().warehouse[li].spaces[si].items.splice(ii, 1);
+  saveState(); renderLane(li);
+  toast('🗑 Item removed', '#ef4444');
+}
+
+function editItemQty(li, si, ii) {
+  const item = wh().warehouse[li].spaces[si].items[ii];
+  const p = state.repo.find(r => r.id === item.repoId);
+  openModal(`
+    <h2>Edit Quantity</h2>
+    <p style="font-size:14px;color:var(--muted);margin-bottom:14px">${esc(p?.name || 'Item')}</p>
+    <div class="field"><label class="label">Quantity</label>
+      <input type="number" id="eq-qty" value="${item.qty}" min="0.01" step="0.01" inputmode="decimal" style="font-size:22px;font-weight:700;text-align:center;color:var(--accent)"></div>
+    <div style="display:flex;gap:8px;margin-top:4px">
+      <button class="btn btn-surface" style="flex:1" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-accent" style="flex:2" onclick="saveItemQty(${li},${si},${ii})">Save</button>
+    </div>
+  `);
+  setTimeout(() => {
+    const inp = document.getElementById('eq-qty');
+    if (inp) { inp.focus(); inp.select(); }
+  }, 120);
+}
+
+function saveItemQty(li, si, ii) {
+  const val = Math.round(parseFloat(document.getElementById('eq-qty').value) * 100) / 100;
+  if (!val || val <= 0) { toast('Quantity must be greater than 0', '#ef4444'); return; }
+  wh().warehouse[li].spaces[si].items[ii].qty = val;
+  saveState(); closeModal(); renderLane(li);
+  toast('✅ Quantity updated');
+}
+
+function editItemDate(li, si, ii) {
+  const item = wh().warehouse[li].spaces[si].items[ii];
+  const p = state.repo.find(r => r.id === item.repoId);
+  openModal(`
+    <h2>Edit Date</h2>
+    <p style="font-size:14px;color:var(--muted);margin-bottom:14px">${esc(p?.name || 'Item')}</p>
+    <div class="field"><label class="label">Date</label>
+      <input type="date" id="ed-date" value="${item.date || ''}" style="font-size:16px;color:var(--text)"></div>
+    <div style="display:flex;gap:8px;margin-top:4px">
+      <button class="btn btn-surface" style="flex:1" onclick="clearItemDate(${li},${si},${ii})">Clear</button>
+      <button class="btn btn-accent" style="flex:2" onclick="saveItemDate(${li},${si},${ii})">Save</button>
+    </div>
+  `);
+}
+
+function saveItemDate(li, si, ii) {
+  const val = document.getElementById('ed-date').value;
+  wh().warehouse[li].spaces[si].items[ii].date = val || '';
+  saveState(); closeModal(); renderLane(li);
+  toast('✅ Date updated');
+}
+
+function clearItemDate(li, si, ii) {
+  wh().warehouse[li].spaces[si].items[ii].date = '';
+  saveState(); closeModal(); renderLane(li);
+  toast('🗑 Date cleared', '#ef4444');
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   SETTINGS
+══════════════════════════════════════════════════════════════════════ */
+function renderSettings() {
+  for (let wi = 0; wi < 3; wi++) {
+    const w = state.wh[wi];
+    const color = WH_COLORS[wi];
+    const laneOpts = w.warehouse.slice(0, w.lanes - 1).map((lane, i) =>
+      `<option value="${i}" ${w.splitAfter === i ? 'selected' : ''}>${esc(lane.name || `Lane ${i+1}`)}</option>`
+    ).join('');
+    document.getElementById(`wh-settings-${wi}`).innerHTML = `
+      <div class="card" style="border-top:3px solid ${color}">
+        <p class="label" style="color:${color}">Warehouse ${wi+1}</p>
+        <div class="field" style="margin-bottom:10px">
+          <label class="label">Name</label>
+          <input type="text" id="wh-name-${wi}" value="${esc(w.name)}" placeholder="Warehouse name"
+            onchange="saveWHName(${wi})" autocapitalize="words">
+        </div>
+        <div class="setting-row">
+          <span class="setting-label">Number of Lanes</span>
+          <button class="stepper-btn" onclick="adjustLanes(${wi},-1)">−</button>
+          <span class="setting-val" id="lane-count-val-${wi}">${w.lanes}</span>
+          <button class="stepper-btn" onclick="adjustLanes(${wi},1)">+</button>
+        </div>
+        <p style="font-size:12px;color:var(--muted);margin-top:-4px;margin-bottom:10px">Spaces per lane are set individually on each lane.</p>
+        <div class="field">
+          <label class="label">Lane Split (Aisle Gap)</label>
+          <select id="split-select-${wi}" onchange="saveLaneSplit(${wi})">
+            <option value="" ${w.splitAfter === null || w.splitAfter === undefined ? 'selected' : ''}>None</option>
+            ${laneOpts}
+          </select>
+        </div>
+      </div>`;
+  }
+}
+
+function saveWHName(wi) {
+  const val = document.getElementById(`wh-name-${wi}`).value.trim();
+  if (!val) return;
+  state.wh[wi].name = val;
+  saveState();
+  updateWhNav();
+  toast('✅ Name saved');
+}
+
+function saveLaneSplit(wi) {
+  const val = document.getElementById(`split-select-${wi}`).value;
+  state.wh[wi].splitAfter = val === '' ? null : parseInt(val);
+  saveState();
+  if (state.activeWH === wi) renderDots();
+  toast('✅ Aisle gap updated');
+}
+
+function adjustLanes(wi, delta) {
+  const w = state.wh[wi];
+  const next = w.lanes + delta;
+  if (next < 1 || next > 50) return;
+  if (delta < 0 && w.warehouse.length > next) {
+    const removing = w.warehouse.slice(next);
+    const hasData = removing.some(l => l.spaces.length > 0);
+    if (hasData && !confirm(`Removing this lane will delete its spaces and items. Continue?`)) return;
+    w.warehouse = w.warehouse.slice(0, next);
+  }
+  w.lanes = next;
+  while (w.warehouse.length < w.lanes)
+    w.warehouse.push({ name: `Lane ${w.warehouse.length + 1}`, spaces: [] });
+  saveState();
+  document.getElementById(`lane-count-val-${wi}`).textContent = w.lanes;
+  if (state.activeWH === wi) {
+    if (currentLane >= w.lanes) currentLane = w.lanes - 1;
+    buildWarehouseDOM();
+  }
+  renderSettings();
+  toast(`Lanes set to ${w.lanes}`);
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   SEARCH
+══════════════════════════════════════════════════════════════════════ */
+function updateSearchFilterLabels() {
+  for (let wi = 0; wi < 3; wi++) {
+    const label = document.getElementById(`sf-label-${wi}`);
+    const wrap  = document.getElementById(`sf-label-wrap-${wi}`);
+    const chk   = document.getElementById(`sf-${wi}`);
+    if (!label || !wrap || !chk) continue;
+    label.textContent = state.wh[wi].name || `Warehouse ${wi+1}`;
+    wrap.style.borderColor = chk.checked ? WH_COLORS[wi] : 'var(--border)';
+    wrap.style.color = chk.checked ? WH_COLORS[wi] : 'var(--muted)';
+    wrap.style.background = chk.checked ? `${WH_COLORS[wi]}18` : 'var(--card)';
+    wrap.classList.toggle('checked', chk.checked);
+  }
+}
+
+function renderSearch() {
+  updateSearchFilterLabels();
+  const q = (document.getElementById('search-query')?.value || '').toLowerCase();
+  const list = document.getElementById('search-list');
+
+  // Collect all items from all warehouses
+  let rows = [];
+  state.wh.forEach((w, wi) => {
+    if (!document.getElementById(`sf-${wi}`)?.checked) return;
+    w.warehouse.forEach(lane => {
+      lane.spaces.forEach(sp => {
+        sp.items.forEach((it, ii) => {
+          const p = state.repo.find(r => r.id === it.repoId);
+          if (!p) return;
+          // Find indices for qty editing
+          const li = w.warehouse.indexOf(lane);
+          const si = lane.spaces.indexOf(sp);
+          rows.push({ p, it, ii, li, si, wi, whName: w.name || `Warehouse ${wi+1}` });
+        });
+      });
+    });
+  });
+
+  // Filter by query
+  if (q) {
+    rows = rows.filter(r =>
+      r.p.name.toLowerCase().includes(q) ||
+      (r.p.comments || '').toLowerCase().includes(q) ||
+      r.whName.toLowerCase().includes(q)
+    );
+  }
+
+  // Sort: Name → Warehouse Name → Qty
+  rows.sort((a, b) => {
+    const n = a.p.name.localeCompare(b.p.name);
+    if (n !== 0) return n;
+    const w = a.whName.localeCompare(b.whName);
+    if (w !== 0) return w;
+    return a.it.qty - b.it.qty;
+  });
+
+  if (!rows.length) {
+    list.innerHTML = `<div id="search-empty">📦 No items found.</div>`;
+    return;
+  }
+
+  list.innerHTML = rows.map(({ p, it, li, si, wi, whName }) => {
+    const w = state.wh[wi];
+    const laneName = w.warehouse[li]?.name || `Lane ${li+1}`;
+    const spaceName = w.warehouse[li]?.spaces[si]?.name || `Space ${si+1}`;
+    const palletQty = parseFloat(p.palletQty) || 0;
+    const mismatch = palletQty > 0 && it.qty !== palletQty;
+    const qtyColor = mismatch ? 'var(--red)' : 'var(--accent)';
+    const qtyBg    = mismatch ? 'rgba(220,38,38,0.1)' : 'rgba(59,114,217,0.1)';
+    const qtyBorder= mismatch ? 'rgba(220,38,38,0.35)' : 'rgba(59,114,217,0.3)';
+    const dateBadge = it.date
+      ? `<span style="font-size:11px;color:var(--amber);background:rgba(217,119,6,0.1);border:1px solid rgba(217,119,6,0.3);border-radius:6px;padding:3px 8px;">${esc(it.date)}</span>`
+      : '';
+    return `<div class="search-item" style="border-left-color:${WH_COLORS[wi]}">
+      <div class="search-item-name">${esc(p.name)}</div>
+      <div class="search-item-meta">SKU: <strong>${esc(p.sku||'—')}</strong> &nbsp;·&nbsp; Size: <strong>${esc(String(p.size||'—'))}</strong> &nbsp;·&nbsp; Case: <strong>${esc(String(p.caseQty||'—'))}</strong></div>
+      <div class="search-item-row">
+        <span style="font-size:13px;font-weight:700;color:${qtyColor};background:${qtyBg};border:1px solid ${qtyBorder};border-radius:6px;padding:3px 10px;">×${it.qty}</span>
+        <span class="search-item-wh" style="background:${WH_COLORS[wi]}">${esc(whName)}</span>
+        <span style="font-size:12px;color:var(--muted)">${esc(laneName)} · ${esc(spaceName)}</span>
+        ${dateBadge}
+      </div>
+      ${p.comments ? `<div class="search-item-comment">${esc(p.comments)}</div>` : ''}
+    </div>`;
+  }).join('');
+}
+
+function exportData() {
+  const json = JSON.stringify(state, null, 2);
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([json], { type: 'application/json' }));
+  a.download = `warehouse_${new Date().toISOString().slice(0,10)}.json`;
+  a.click();
+  toast('📤 Export started');
+}
+
+function importData() {
+  document.getElementById('import-file').click();
+}
+
+function handleImport(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    try {
+      const data = JSON.parse(ev.target.result);
+      if (!data.repo) throw new Error('Invalid format');
+      if (!confirm('This will overwrite all current data. Continue?')) return;
+      state = data;
+      saveState();
+      renderRepo();
+      toast('✅ Data imported');
+    } catch(err) { toast('❌ Invalid file', '#ef4444'); }
+  };
+  reader.readAsText(file);
+  e.target.value = '';
+}
+
+function resetAll() {
+  if (!confirm('Delete EVERYTHING? This cannot be undone.')) return;
+  state = defaultState();
+  saveState();
+  currentLane = 0;
+  renderRepo();
+  renderSettings();
+  updateWhNav();
+  toast('🗑 All data reset', '#ef4444');
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   UTILITIES
+══════════════════════════════════════════════════════════════════════ */
+function uid() { return Math.random().toString(36).slice(2) + Date.now().toString(36); }
+function esc(s) {
+  return String(s||'')
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   INIT
+══════════════════════════════════════════════════════════════════════ */
+loadState();
+document.getElementById('header-action').innerHTML = headerActions['repo'];
+renderRepo();
+updateWhNav();
+
+// Service Worker
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('sw.js').catch(() => {});
+}
+
+// Handle lane name editing (tap lane label)
+document.getElementById('lane-label').addEventListener('click', () => {
+  const lane = wh().warehouse[currentLane];
+  if (!lane) return;
+  openModal(`
+    <h2>Rename Lane</h2>
+    <div class="field"><label class="label">Lane Name</label>
+      <input type="text" id="lane-name-inp" value="${esc(lane.name)}" autocapitalize="words"></div>
+    <div style="display:flex;gap:8px;margin-top:4px">
+      <button class="btn btn-surface" style="flex:1" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-accent" style="flex:2" onclick="saveLaneName()">Save</button>
+    </div>
+  `);
+  setTimeout(() => document.getElementById('lane-name-inp')?.focus(), 100);
+});
+
+function saveLaneName() {
+  const val = document.getElementById('lane-name-inp').value.trim();
+  if (!val) { toast('Name required', '#ef4444'); return; }
+  wh().warehouse[currentLane].name = val;
+  saveState(); closeModal();
+  document.getElementById('lane-label').textContent = val;
+  toast('✅ Lane renamed');
+}
+</script>
+</body>
+</html>
